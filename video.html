@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Pour Ema</title>
+<style>
+:root{ --accent:#39ff14; --bg:#070708; --text:#fff; }
+body{
+  margin:0; background:#000; display:flex; 
+  justify-content:center; align-items:center; height:100vh; overflow:hidden;
+  font-family:Inter,system-ui,Arial,sans-serif;
+}
+
+#video-container { 
+    position: relative; width: 100%; max-width: 900px; 
+    box-shadow: 0 0 30px rgba(57, 255, 20, 0.1);
+    border-radius: 15px; overflow: hidden;
+}
+
+video { width: 100%; display: block; }
+
+/* L'overlay qui se met par dessus */
+#question-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75); /* Fond transparent pour voir la vidéo */
+    backdrop-filter: blur(5px); /* Effet flou */
+    display: none; /* Caché au début */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.box {
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid var(--accent);
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    width: 80%;
+    max-width: 400px;
+    box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
+    animation: popIn 0.5s ease;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+h3 { color: var(--accent); margin-bottom: 20px; font-size: 1.2em; }
+
+button {
+    display: block; width: 100%; margin: 10px 0; padding: 12px;
+    border-radius: 10px; border: none; font-weight: bold; cursor: pointer;
+    font-size: 16px; transition: 0.3s;
+}
+
+.btn-love { background: var(--accent); color: #000; }
+.btn-sad { background: #333; color: #fff; border: 1px solid #555; }
+.btn-other { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+
+button:hover { transform: scale(1.02); box-shadow: 0 0 15px rgba(57,255,20,0.3); }
+
+/* Zone Autre réponse */
+#custom-area { display: none; width: 100%; }
+textarea {
+    width: 90%; padding: 10px; border-radius: 10px;
+    background: #111; border: 1px solid #444; color: white;
+    margin-bottom: 10px; font-family: inherit; resize: none;
+}
+.btn-cancel { background: #444; color: #ccc; font-size: 0.9em; }
+
+</style>
+</head>
+<body>
+
+<div id="video-container">
+    <video id="myVideo" src="chrono.mp4" controls controlsList="nodownload"></video>
+    
+    <div id="question-overlay">
+        <div class="box">
+            <h3>Est-ce que c'est vrai que tu ne m'aimes pas ?</h3>
+            
+            <div id="choices">
+                <button class="btn-love" onclick="submitAnswer('Non, je t\'aime')">Non, je t'aime ❤️</button>
+                <button class="btn-sad" onclick="submitAnswer('Oui, je ne t\'aime pas')">Oui, je ne t'aime pas 😢</button>
+                <button class="btn-other" onclick="showCustomInput()">Autre réponse...</button>
+            </div>
+
+            <div id="custom-area">
+                <textarea id="custom-text" rows="3" placeholder="Écris ton message ici..."></textarea>
+                <button class="btn-love" onclick="validateCustom(this)">Envoyer</button>
+                <button class="btn-cancel" onclick="cancelCustom()">Annuler</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // TON LIEN NGROK EST ICI :
+    const API = 'https://pearlier-captivatingly-so.ngrok-free.dev';
+    
+    const video = document.getElementById('myVideo');
+    const overlay = document.getElementById('question-overlay');
+    let maxTimeWatched = 0;
+    let questionAnswered = false;
+    const STOP_TIME = 12; 
+
+    // Gestion Vidéo
+    video.addEventListener('timeupdate', () => {
+        if (!video.seeking) {
+            if (video.currentTime > maxTimeWatched) maxTimeWatched = video.currentTime;
+        }
+        
+        // Pause à 12s
+        if (!questionAnswered && video.currentTime >= STOP_TIME && video.currentTime < STOP_TIME + 1) {
+            video.pause();
+            video.currentTime = STOP_TIME;
+            video.controls = false;
+            overlay.style.display = 'flex'; // Affiche l'overlay transparent
+        }
+    });
+
+    video.addEventListener('seeking', () => {
+        if (video.currentTime > maxTimeWatched + 1) {
+            video.currentTime = maxTimeWatched;
+        }
+    });
+
+    // Gestion Interface
+    function showCustomInput() {
+        document.getElementById('choices').style.display = 'none';
+        document.getElementById('custom-area').style.display = 'block';
+    }
+
+    function cancelCustom() {
+        document.getElementById('custom-area').style.display = 'none';
+        document.getElementById('choices').style.display = 'block';
+        document.getElementById('custom-text').value = ''; // Vide le texte
+    }
+
+    let clickCount = 0;
+    function validateCustom(btn) {
+        if (clickCount === 0) {
+            btn.innerText = "Sûre ? (Clique encore)";
+            btn.style.background = "#ff9900"; 
+            clickCount++;
+        } else {
+            const text = document.getElementById('custom-text').value;
+            submitAnswer('Autre', text);
+        }
+    }
+
+    function submitAnswer(choice, customText = '') {
+        // Sauvegarde sur le serveur
+        fetch(API + '/save-answer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                question: "Est-ce que c'est vrai que tu ne m'aimes pas ?",
+                answer: choice,
+                customText: customText
+            })
+        }).then(() => {
+            alert("Réponse envoyée !");
+            overlay.style.display = 'none';
+            questionAnswered = true;
+            video.controls = true;
+            video.play();
+        }).catch(() => {
+            alert("Erreur réseau (Le serveur est éteint ?)");
+        });
+    }
+</script>
+
+</body>
+</html>
