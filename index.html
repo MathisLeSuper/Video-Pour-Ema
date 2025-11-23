@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Identification Ema</title>
+<style>
+:root{
+  --bg:#070708; --text:#e9eef2; --muted:#96a0aa;
+  --accent:#39ff14; --accent-2:#32cd32; /* Vert Néon */
+}
+body{
+  margin:0;font-family:Inter,system-ui,Arial,sans-serif;
+  background:linear-gradient(180deg,#050507,var(--bg));
+  color:var(--text);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;min-height:100vh;
+}
+.container{
+  width:100%;max-width:500px;
+  background:rgba(255,255,255,0.03);
+  backdrop-filter: blur(10px);
+  border-radius:14px;padding:28px;
+  border:1px solid rgba(57, 255, 20, 0.2);
+  box-shadow:0 16px 60px rgba(0,0,0,0.8);
+  animation: float 6s ease-in-out infinite;
+}
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+}
+.title{
+  font-size:28px;font-weight:800;margin:0 0 6px;line-height:1.2;
+  color: var(--accent);
+  text-shadow:0 0 15px rgba(57, 255, 20, 0.4);
+  text-align: center;
+}
+.lead{margin:6px 0 18px;color:var(--muted);font-size:14px; text-align: center;}
+
+/* Chat IA Style */
+#chat-box {
+    height: 200px; overflow-y: auto; 
+    border: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 10px;
+    padding: 10px; 
+    background: rgba(0,0,0,0.5);
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+.msg-ai { color: var(--accent); margin-bottom: 5px; }
+.msg-user { color: #fff; text-align: right; margin-bottom: 5px; opacity: 0.8; }
+
+.input-row{display:flex;gap:12px;align-items:center;margin-bottom:12px;position:relative;}
+.real-input{
+  flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);
+  background:rgba(0,0,0,0.3);color:var(--text);font-size:15px;
+  caret-color:var(--accent); outline: none;
+}
+.real-input:focus { border-color: var(--accent); }
+
+.btn{height:48px;padding:0 18px;border-radius:12px;border:0;cursor:pointer;
+  background:linear-gradient(180deg,var(--accent),var(--accent-2));
+  color:#051014;font-weight:800;box-shadow:0 0 15px rgba(57, 255, 20, 0.2); transition: 0.2s;}
+.btn:active{transform:scale(.98)}
+.btn:hover{box-shadow:0 0 25px rgba(57, 255, 20, 0.5); color: white;}
+
+#status{min-height:28px;margin-top:10px;font-weight:700;color:var(--muted);font-size:14px; text-align: center;}
+.error { color: #ff4444 !important; }
+.success { color: var(--accent) !important; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1 class="title">ACCÈS SÉCURISÉ</h1>
+  <p class="lead">L'IA doit vérifier ton identité.</p>
+
+  <div id="chat-box">
+      <div class="msg-ai">IA: Bonjour. Prouve que tu es Ema.</div>
+  </div>
+  
+  <div class="input-row">
+      <input id="ai-input" class="real-input" type="text" placeholder="Parle à l'IA...">
+      <button onclick="sendMessageToAI()" class="btn">➤</button>
+  </div>
+
+  <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+
+  <p class="lead" style="margin-bottom: 5px;">Une fois le code obtenu :</p>
+  <div class="input-row">
+    <input id="code-input" class="real-input" type="text" placeholder="Entrer le code secret">
+    <button onclick="verifyCode()" id="btn-verify" class="btn">Valider</button>
+  </div>
+
+  <div id="status"></div>
+</div>
+
+<script>
+// TON LIEN NGROK EST ICI :
+const API = 'https://pearlier-captivatingly-so.ngrok-free.dev';
+
+const chatBox = document.getElementById('chat-box');
+const aiInput = document.getElementById('ai-input');
+const statusDiv = document.getElementById('status');
+
+// Fonction Chat IA
+async function sendMessageToAI() {
+    const text = aiInput.value;
+    if(!text) return;
+
+    // Affiche message utilisateur
+    chatBox.innerHTML += `<div class="msg-user">Moi: ${text}</div>`;
+    aiInput.value = "";
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+        const res = await fetch(API + '/chat-ai', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        
+        chatBox.innerHTML += `<div class="msg-ai">IA: ${data.reply}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } catch(err) {
+        chatBox.innerHTML += `<div class="msg-ai" style="color:red">Erreur connexion serveur...</div>`;
+    }
+}
+
+// Fonction Vérification Code
+async function verifyCode(){
+  const code = document.getElementById('code-input').value;
+  if(!code){ statusDiv.textContent='Entre un code.'; return;}
+  
+  statusDiv.textContent='Vérification...';
+  statusDiv.className = '';
+
+  try{
+    const res = await fetch(API + '/verify-code', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ code })
+    });
+    const j = await res.json();
+
+    if(j.success){
+      statusDiv.textContent = 'Code Valide ✔️';
+      statusDiv.className = 'success';
+      setTimeout(() => { window.location.href = "video.html"; }, 1500);
+    } else {
+      statusDiv.textContent = 'Code incorrect. Réessaie 😉';
+      statusDiv.className = 'error';
+    }
+  } catch(err){
+      statusDiv.textContent='Erreur réseau (Le serveur est-il allumé ?)';
+      statusDiv.className = 'error';
+  }
+}
+
+// Touche Entrée pour envoyer
+aiInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendMessageToAI(); });
+</script>
+</body>
+</html>
