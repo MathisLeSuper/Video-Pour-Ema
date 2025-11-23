@@ -1,0 +1,79 @@
+body {
+    background-color: #1a1a1a;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+.neon-box {
+    background: #2b2b2b;
+    border: 2px solid #39ff14;
+    box-shadow: 0 0 15px #39ff14, inset 0 0 10px #39ff14;
+    border-radius: 15px;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+    position: relative;
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+input, button, textarea {
+    width: 80%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #39ff14;
+    background: #111;
+    color: #39ff14;
+    font-size: 16px;
+    outline: none;
+}
+
+button {
+    background: #39ff14;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #fff;
+    box-shadow: 0 0 20px #39ff14;
+}
+
+.message { margin-top: 10px; font-weight: bold; }
+.error { color: #ff3333; text-shadow: 0 0 5px red; border-color: red; }
+.success { color: #39ff14; text-shadow: 0 0 5px green; }
+
+/* Vidéo et Overlay */
+#video-container { position: relative; width: 100%; max-width: 800px; }
+video { width: 100%; border-radius: 15px; box-shadow: 0 0 20px #39ff14; }
+
+#question-overlay {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #39ff14;
+    padding: 20px;
+    border-radius: 15px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 0 30px #39ff14;
+    width: 80%;
+    text-align: center;
+}
